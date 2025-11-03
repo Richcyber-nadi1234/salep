@@ -8,7 +8,7 @@ export interface Transaction {
   status: string;
 }
 
-const regions = ["North America", "Europe", "Asia Pacific", "Latin America"];
+const regions = ["Greater Accra", "Ashanti", "Western", "Eastern", "Central", "Northern", "Volta", "Upper East"];
 const segments = ["SMB", "Enterprise", "Mid-Market"];
 const leadSources = ["Google Ads", "Direct", "Partner", "Referral", "LinkedIn"];
 const statuses = ["Closed Won", "Closed Lost", "In Progress"];

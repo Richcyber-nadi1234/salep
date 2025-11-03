@@ -135,7 +135,7 @@ const Index = () => {
               <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 Sales Performance Dashboard
               </h1>
-              <p className="text-muted-foreground mt-1">Q4 Sales Analytics & Regional Insights</p>
+              <p className="text-muted-foreground mt-1">Ghana Regional Sales Analytics</p>
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
