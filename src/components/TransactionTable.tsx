@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Transaction } from "@/lib/mockData";
+import { Transaction } from "@/hooks/useTransactions";
 import { cn } from "@/lib/utils";
 
 interface TransactionTableProps {
@@ -67,7 +67,7 @@ export const TransactionTable = ({ transactions, selectedRegion }: TransactionTa
                 ) : (
                   transactions.map((transaction) => (
                     <TableRow 
-                      key={transaction.transaction_id}
+                      key={transaction.id}
                       className="hover:bg-muted/50 transition-colors"
                     >
                       <TableCell className="font-mono text-sm">

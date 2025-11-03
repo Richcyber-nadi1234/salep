@@ -9,17 +9,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon, DollarSign, TrendingUp, Users, RefreshCw } from "lucide-react";
+import { CalendarIcon, DollarSign, TrendingUp, Users, RefreshCw, LogOut } from "lucide-react";
 import { format, subDays, isWithinInterval } from "date-fns";
 import { cn } from "@/lib/utils";
-import { mockTransactions, Transaction } from "@/lib/mockData";
 import { KPICard } from "@/components/KPICard";
 import { RevenueChart } from "@/components/RevenueChart";
 import { RegionChart } from "@/components/RegionChart";
 import { TransactionTable } from "@/components/TransactionTable";
 import { DateRange } from "react-day-picker";
+import { useTransactions } from "@/hooks/useTransactions";
+import { AddTransactionDialog } from "@/components/AddTransactionDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const { transactions: dbTransactions, loading } = useTransactions();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
@@ -27,9 +35,15 @@ const Index = () => {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [regionFilter, setRegionFilter] = useState<string>("all");
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({ title: "Logged out successfully" });
+    navigate("/auth");
+  };
+
   // Filter transactions based on date range and region
   const filteredTransactions = useMemo(() => {
-    let filtered = mockTransactions;
+    let filtered = dbTransactions;
 
     // Filter by date range
     if (dateRange?.from && dateRange?.to) {
@@ -53,7 +67,7 @@ const Index = () => {
     }
 
     return filtered;
-  }, [dateRange, regionFilter, selectedRegion]);
+  }, [dbTransactions, dateRange, regionFilter, selectedRegion]);
 
   // Calculate KPIs
   const { totalRevenue, avgDealSize, conversionRate, previousRevenue } = useMemo(() => {
@@ -72,7 +86,7 @@ const Index = () => {
     const previousStart = dateRange?.from ? subDays(dateRange.from, daysDiff) : subDays(new Date(), 60);
     const previousEnd = dateRange?.from ? subDays(dateRange.from, 1) : subDays(new Date(), 31);
     
-    const previousTransactions = mockTransactions.filter((t) => {
+    const previousTransactions = dbTransactions.filter((t) => {
       const date = new Date(t.date);
       return isWithinInterval(date, { start: previousStart, end: previousEnd }) && 
              t.status === "Closed Won";
@@ -86,7 +100,7 @@ const Index = () => {
       conversionRate: conversion,
       previousRevenue: prevTotal,
     };
-  }, [filteredTransactions, dateRange]);
+  }, [filteredTransactions, dateRange, dbTransactions]);
 
   // Prepare chart data
   const revenueChartData = useMemo(() => {
@@ -123,7 +137,15 @@ const Index = () => {
     ? ((totalRevenue - previousRevenue) / previousRevenue) * 100
     : 0;
 
-  const regions = Array.from(new Set(mockTransactions.map((t) => t.region)));
+  const regions = Array.from(new Set(dbTransactions.map((t) => t.region)));
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,6 +161,8 @@ const Index = () => {
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
+              <AddTransactionDialog />
+              
               {/* Region Filter */}
               <Select value={regionFilter} onValueChange={setRegionFilter}>
                 <SelectTrigger className="w-[180px] bg-background border-border">
@@ -204,6 +228,17 @@ const Index = () => {
                   Clear Selection
                 </Button>
               )}
+
+              {/* Logout Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="bg-background border-border"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>
