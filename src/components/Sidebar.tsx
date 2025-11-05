@@ -9,7 +9,9 @@ import {
   BarChart3, 
   UserCircle,
   LogOut,
-  Building2
+  Building2,
+  Shield,
+  TrendingUp
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,6 +66,18 @@ export const Sidebar = () => {
       href: "/manager",
       icon: BarChart3,
       show: hasAnyRole(['manager', 'ceo']),
+    },
+    {
+      name: "Performance",
+      href: "/performance",
+      icon: TrendingUp,
+      show: true,
+    },
+    {
+      name: "Admin Panel",
+      href: "/admin",
+      icon: Shield,
+      show: hasAnyRole(['ceo', 'hr']),
     },
     {
       name: "My Profile",

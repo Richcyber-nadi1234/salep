@@ -11,6 +11,8 @@ import IT from "./pages/IT";
 import Finance from "./pages/Finance";
 import Manager from "./pages/Manager";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import Performance from "./pages/Performance";
 import { AuthForm } from "@/components/AuthForm";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -31,6 +33,8 @@ const App = () => (
           <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
           <Route path="/manager" element={<ProtectedRoute><Manager /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+          <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
