@@ -10,6 +10,20 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, FileText, AlertCircle } from "lucide-react";
+import { z } from "zod";
+
+const profileSchema = z.object({
+  full_name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  phone: z.string().trim().max(20, "Phone must be less than 20 characters").optional().or(z.literal("")),
+  department: z.string().trim().max(100, "Department must be less than 100 characters").optional().or(z.literal("")),
+});
+
+const leaveRequestSchema = z.object({
+  leave_type: z.string().min(1, "Leave type is required").max(50, "Leave type must be less than 50 characters"),
+  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid start date format"),
+  end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid end date format"),
+  reason: z.string().trim().max(500, "Reason must be less than 500 characters").optional().or(z.literal("")),
+});
 
 export default function Profile() {
   const [profile, setProfile] = useState<any>(null);
@@ -64,20 +78,28 @@ export default function Profile() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const { error } = await supabase
-      .from('profiles')
-      .update({
+    try {
+      const validatedData = profileSchema.parse({
         full_name: formData.get('full_name') as string,
         phone: formData.get('phone') as string,
         department: formData.get('department') as string,
-      })
-      .eq('id', profile.id);
+      });
 
-    if (error) {
-      toast({ title: "Error updating profile", variant: "destructive" });
-    } else {
+      const { error } = await supabase
+        .from('profiles')
+        .update(validatedData)
+        .eq('id', profile.id);
+
+      if (error) throw error;
+      
       toast({ title: "Profile updated successfully" });
       fetchProfile();
+    } catch (error: any) {
+      toast({ 
+        title: "Error updating profile", 
+        description: error instanceof z.ZodError ? error.errors[0].message : error.message,
+        variant: "destructive" 
+      });
     }
   };
 
@@ -85,24 +107,42 @@ export default function Profile() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    const { error } = await supabase
-      .from('leave_requests')
-      .insert([{
-        user_id: session?.user.id,
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const validatedData = leaveRequestSchema.parse({
         leave_type: formData.get('leave_type') as string,
         start_date: formData.get('start_date') as string,
         end_date: formData.get('end_date') as string,
         reason: formData.get('reason') as string,
-      }]);
+      });
 
-    if (error) {
-      toast({ title: "Error submitting leave request", variant: "destructive" });
-    } else {
-      toast({ title: "Leave request submitted" });
+      // Validate date logic
+      if (new Date(validatedData.start_date) > new Date(validatedData.end_date)) {
+        throw new Error("End date must be after start date");
+      }
+
+      const { error } = await supabase
+        .from('leave_requests')
+        .insert([{
+          user_id: session?.user.id,
+          leave_type: validatedData.leave_type,
+          start_date: validatedData.start_date,
+          end_date: validatedData.end_date,
+          reason: validatedData.reason,
+        }]);
+
+      if (error) throw error;
+      
+      toast({ title: "Leave request submitted successfully" });
       fetchMyLeaveRequests();
       (e.target as HTMLFormElement).reset();
+    } catch (error: any) {
+      toast({ 
+        title: "Error submitting leave request",
+        description: error instanceof z.ZodError ? error.errors[0].message : error.message,
+        variant: "destructive" 
+      });
     }
   };
 

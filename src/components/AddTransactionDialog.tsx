@@ -7,11 +7,22 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
+import { z } from "zod";
 
 const regions = ["Greater Accra", "Ashanti", "Western", "Eastern", "Central", "Northern", "Volta", "Upper East"];
 const segments = ["SMB", "Enterprise", "Mid-Market"];
 const leadSources = ["Google Ads", "Direct", "Partner", "Referral", "LinkedIn"];
 const statuses = ["Closed Won", "Closed Lost", "In Progress"];
+
+const transactionSchema = z.object({
+  transaction_id: z.string().trim().min(1, "Transaction ID is required").max(50, "Transaction ID must be less than 50 characters"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+  region: z.enum(["Greater Accra", "Ashanti", "Western", "Eastern", "Central", "Northern", "Volta", "Upper East"]),
+  sale_amount: z.number().positive("Sale amount must be positive").max(100000000, "Sale amount exceeds maximum"),
+  customer_segment: z.enum(["SMB", "Enterprise", "Mid-Market"]),
+  lead_source: z.enum(["Google Ads", "Direct", "Partner", "Referral", "LinkedIn"]),
+  status: z.enum(["Closed Won", "Closed Lost", "In Progress"]),
+});
 
 export const AddTransactionDialog = () => {
   const [open, setOpen] = useState(false);
@@ -36,8 +47,8 @@ export const AddTransactionDialog = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("transactions").insert({
-        user_id: user.id,
+      // Validate input
+      const validatedData = transactionSchema.parse({
         transaction_id: formData.transaction_id,
         date: formData.date,
         region: formData.region,
@@ -46,6 +57,17 @@ export const AddTransactionDialog = () => {
         lead_source: formData.lead_source,
         status: formData.status,
       });
+
+      const { error } = await supabase.from("transactions").insert([{
+        user_id: user.id,
+        transaction_id: validatedData.transaction_id,
+        date: validatedData.date,
+        region: validatedData.region,
+        sale_amount: validatedData.sale_amount,
+        customer_segment: validatedData.customer_segment,
+        lead_source: validatedData.lead_source,
+        status: validatedData.status,
+      }]);
 
       if (error) throw error;
 
@@ -63,7 +85,7 @@ export const AddTransactionDialog = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof z.ZodError ? error.errors[0].message : error.message,
         variant: "destructive",
       });
     } finally {
