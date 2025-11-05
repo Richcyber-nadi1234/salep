@@ -9,8 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, FileText, AlertCircle } from "lucide-react";
+import { Calendar, FileText, AlertCircle, Upload, User } from "lucide-react";
 import { z } from "zod";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const profileSchema = z.object({
   full_name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
@@ -29,6 +30,7 @@ export default function Profile() {
   const [profile, setProfile] = useState<any>(null);
   const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
   const [myTickets, setMyTickets] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { roles } = useUserRole();
 
@@ -103,6 +105,61 @@ export default function Profile() {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error("File size must be less than 5MB");
+      }
+
+      // Validate file type
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+        throw new Error("File must be an image (JPEG, PNG, WEBP, or GIF)");
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      toast({ title: "Profile picture updated successfully" });
+      fetchProfile();
+    } catch (error: any) {
+      toast({
+        title: "Error uploading image",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const submitLeaveRequest = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -165,6 +222,28 @@ export default function Profile() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div className="flex flex-col items-center mb-6">
+                  <Avatar className="h-32 w-32 mb-4">
+                    <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || 'User'} />
+                    <AvatarFallback className="text-3xl">
+                      <User className="h-16 w-16" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <Label htmlFor="avatar-upload" className="cursor-pointer">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition">
+                      <Upload className="h-4 w-4" />
+                      <span>{uploading ? 'Uploading...' : 'Upload Photo'}</span>
+                    </div>
+                    <Input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
+                      disabled={uploading}
+                    />
+                  </Label>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" value={profile?.email || ''} disabled />

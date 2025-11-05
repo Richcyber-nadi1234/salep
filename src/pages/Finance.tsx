@@ -12,10 +12,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Finance() {
   const { transactions } = useTransactions();
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [topSales, setTopSales] = useState<any[]>([]);
 
   const totalRevenue = useMemo(() => 
     transactions.reduce((sum, t) => sum + Number(t.sale_amount), 0), 
@@ -46,6 +48,7 @@ export default function Finance() {
 
   useEffect(() => {
     fetchExpenses();
+    fetchTopSales();
 
     const channel = supabase
       .channel('expense-changes')
@@ -55,14 +58,44 @@ export default function Finance() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [transactions]);
+
+  const fetchTopSales = async () => {
+    const userRevenue = new Map<string, number>();
+    transactions.forEach((t) => {
+      userRevenue.set(t.user_id, (userRevenue.get(t.user_id) || 0) + Number(t.sale_amount));
+    });
+
+    const topUsers = Array.from(userRevenue.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    const userIds = topUsers.map(([id]) => id);
+    if (userIds.length === 0) return;
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', userIds);
+
+    const salesPeople = topUsers.map(([userId, revenue]) => {
+      const profile = profiles?.find(p => p.id === userId);
+      return {
+        ...profile,
+        revenue,
+        transactions: transactions.filter(t => t.user_id === userId).length
+      };
+    });
+
+    setTopSales(salesPeople);
+  };
 
   const fetchExpenses = async () => {
     const { data } = await supabase
       .from('expenses')
       .select(`
         *,
-        profiles:user_id (full_name, email)
+        profiles:user_id (full_name, email, avatar_url)
       `)
       .order('created_at', { ascending: false });
     setExpenses(data || []);
@@ -165,7 +198,17 @@ export default function Finance() {
               <TableBody>
                 {expenses.map((expense) => (
                   <TableRow key={expense.id}>
-                    <TableCell>{expense.profiles?.full_name || expense.profiles?.email}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={expense.profiles?.avatar_url || ''} />
+                          <AvatarFallback className="text-xs">
+                            {expense.profiles?.full_name?.charAt(0) || expense.profiles?.email?.charAt(0) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{expense.profiles?.full_name || expense.profiles?.email}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>{expense.category}</TableCell>
                     <TableCell>GH₵{Number(expense.amount).toLocaleString()}</TableCell>
                     <TableCell>{new Date(expense.expense_date).toLocaleDateString()}</TableCell>
@@ -194,14 +237,59 @@ export default function Finance() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Transaction History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TransactionTable transactions={transactions} selectedRegion={null} />
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Sales People</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Revenue</TableHead>
+                    <TableHead>Deals</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topSales.map((person) => (
+                    <TableRow key={person.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={person.avatar_url || ''} />
+                            <AvatarFallback>
+                              {person.full_name?.charAt(0) || person.email?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{person.full_name || person.email}</div>
+                            <div className="text-xs text-muted-foreground">{person.department || 'Sales'}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-semibold">
+                        GH₵{person.revenue?.toLocaleString() || 0}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{person.transactions || 0}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Transaction History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TransactionTable transactions={transactions.slice(0, 5)} selectedRegion={null} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Layout>
   );

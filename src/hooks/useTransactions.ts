@@ -11,6 +11,7 @@ export interface Transaction {
   customer_segment: string;
   lead_source: string;
   status: string;
+  user_id: string;
 }
 
 export const useTransactions = () => {

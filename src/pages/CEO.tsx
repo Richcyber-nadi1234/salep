@@ -5,10 +5,15 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { Building2, Users, Laptop, DollarSign, TrendingUp, FileText } from "lucide-react";
 import { RevenueChart } from "@/components/RevenueChart";
 import { RegionChart } from "@/components/RegionChart";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 export default function CEO() {
   const { transactions } = useTransactions();
+  const [topPerformers, setTopPerformers] = useState<any[]>([]);
 
   const totalRevenue = useMemo(() => 
     transactions.reduce((sum, t) => sum + Number(t.sale_amount), 0), 
@@ -38,6 +43,38 @@ export default function CEO() {
   }, [transactions]);
 
   const avgTransaction = transactions.length > 0 ? totalRevenue / transactions.length : 0;
+
+  useEffect(() => {
+    fetchTopPerformers();
+  }, [transactions]);
+
+  const fetchTopPerformers = async () => {
+    const userRevenue = new Map<string, number>();
+    transactions.forEach((t) => {
+      userRevenue.set(t.user_id, (userRevenue.get(t.user_id) || 0) + Number(t.sale_amount));
+    });
+
+    const topUsers = Array.from(userRevenue.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    const userIds = topUsers.map(([id]) => id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', userIds);
+
+    const performers = topUsers.map(([userId, revenue]) => {
+      const profile = profiles?.find(p => p.id === userId);
+      return {
+        ...profile,
+        revenue,
+        transactions: transactions.filter(t => t.user_id === userId).length
+      };
+    });
+
+    setTopPerformers(performers);
+  };
 
   return (
     <Layout>
@@ -129,23 +166,44 @@ export default function CEO() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Department Health</CardTitle>
+              <CardTitle>Top Performers</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">HR</span>
-                  <span className="text-green-500 font-semibold">Good</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">IT</span>
-                  <span className="text-green-500 font-semibold">Good</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Finance</span>
-                  <span className="text-yellow-500 font-semibold">Fair</span>
-                </div>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Revenue</TableHead>
+                    <TableHead>Deals</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topPerformers.map((performer) => (
+                    <TableRow key={performer.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={performer.avatar_url || ''} />
+                            <AvatarFallback>
+                              {performer.full_name?.charAt(0) || performer.email?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{performer.full_name || performer.email}</div>
+                            <div className="text-xs text-muted-foreground">{performer.department || 'N/A'}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-semibold">
+                        GH₵{performer.revenue?.toLocaleString() || 0}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{performer.transactions || 0}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
 
