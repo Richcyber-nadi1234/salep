@@ -13,7 +13,7 @@ export default function Performance() {
   const { transactions } = useTransactions();
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>("all");
-  const [comparisonUser, setComparisonUser] = useState<string>("");
+  const [comparisonUser, setComparisonUser] = useState<string>("none");
   const [timeRange, setTimeRange] = useState<string>("30");
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function Performance() {
     });
 
     // Add comparison data if selected
-    if (comparisonUser && comparisonUser !== selectedUser) {
+    if (comparisonUser && comparisonUser !== "none" && comparisonUser !== selectedUser) {
       transactions
         .filter(t => t.user_id === comparisonUser)
         .forEach(t => {
@@ -164,7 +164,7 @@ export default function Performance() {
                     <SelectValue placeholder="Select to compare" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {users
                       .filter(u => u.id !== selectedUser)
                       .map(user => (
