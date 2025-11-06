@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserPlus, Settings, Shield } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useNotifications } from "@/hooks/useNotifications";
 
 type UserRole = 'ceo' | 'manager' | 'hr' | 'it' | 'finance' | 'user';
 
@@ -24,6 +25,7 @@ export default function Admin() {
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const { toast } = useToast();
+  const { createNotification } = useNotifications();
 
   useEffect(() => {
     fetchUsers();
@@ -62,6 +64,7 @@ export default function Admin() {
   const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const oldRoles = [...selectedUser.roles];
 
     try {
       // Update profile
@@ -94,6 +97,17 @@ export default function Admin() {
           })));
 
         if (rolesError) throw rolesError;
+      }
+
+      // Notify user if roles changed
+      const rolesChanged = JSON.stringify(oldRoles.sort()) !== JSON.stringify(userRoles.sort());
+      if (rolesChanged) {
+        await createNotification(
+          selectedUser.id,
+          'role_change',
+          'Your roles have been updated',
+          `Your roles have been changed to: ${userRoles.join(', ')}`
+        );
       }
 
       toast({ title: "User updated successfully" });

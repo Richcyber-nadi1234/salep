@@ -11,7 +11,9 @@ import {
   LogOut,
   Building2,
   Shield,
-  TrendingUp
+  TrendingUp,
+  Target,
+  Megaphone
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +73,18 @@ export const Sidebar = () => {
       name: "Performance",
       href: "/performance",
       icon: TrendingUp,
+      show: true,
+    },
+    {
+      name: "Goals",
+      href: "/goals",
+      icon: Target,
+      show: true,
+    },
+    {
+      name: "Announcements",
+      href: "/announcements",
+      icon: Megaphone,
       show: true,
     },
     {

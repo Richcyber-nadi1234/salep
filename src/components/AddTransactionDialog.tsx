@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { z } from "zod";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const regions = ["Greater Accra", "Ashanti", "Western", "Eastern", "Central", "Northern", "Volta", "Upper East"];
 const segments = ["SMB", "Enterprise", "Mid-Market"];
@@ -28,6 +29,7 @@ export const AddTransactionDialog = () => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { createNotification, createBulkNotifications } = useNotifications();
   
   const [formData, setFormData] = useState({
     transaction_id: "",
@@ -70,6 +72,22 @@ export const AddTransactionDialog = () => {
       }]);
 
       if (error) throw error;
+
+      // Notify managers and CEO about new transaction
+      const { data: managerRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('role', ['manager', 'ceo']);
+
+      if (managerRoles && managerRoles.length > 0) {
+        const managerIds = managerRoles.map(r => r.user_id);
+        await createBulkNotifications(
+          managerIds,
+          'transaction',
+          'New Transaction Added',
+          `A new transaction of GH₵${validatedData.sale_amount.toLocaleString()} has been recorded in ${validatedData.region}`
+        );
+      }
 
       toast({ title: "Transaction added successfully!" });
       setOpen(false);
