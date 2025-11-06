@@ -67,13 +67,13 @@ export default function Admin() {
     const oldRoles = [...selectedUser.roles];
 
     try {
-      // Update profile
+      // Update profile with proper null handling
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          full_name: formData.get('full_name') as string,
-          department: formData.get('department') as string,
-          phone: formData.get('phone') as string,
+          full_name: formData.get('full_name') as string || null,
+          department: formData.get('department') as string || null,
+          phone: formData.get('phone') as string || null,
         })
         .eq('id', selectedUser.id);
 
