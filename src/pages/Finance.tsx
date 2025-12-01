@@ -1,6 +1,9 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KPICard } from "@/components/KPICard";
+import { SkeletonCard } from "@/components/SkeletonCard";
+import { SkeletonChart } from "@/components/SkeletonChart";
+import { SkeletonTable } from "@/components/SkeletonTable";
 import { DollarSign, TrendingUp, TrendingDown, FileText } from "lucide-react";
 import { RevenueChart } from "@/components/RevenueChart";
 import { RegionChart } from "@/components/RegionChart";
@@ -15,9 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Finance() {
-  const { transactions } = useTransactions();
+  const { transactions, loading } = useTransactions();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [topSales, setTopSales] = useState<any[]>([]);
+  const [loadingExpenses, setLoadingExpenses] = useState(true);
 
   const totalRevenue = useMemo(() => 
     transactions.reduce((sum, t) => sum + Number(t.sale_amount), 0), 
@@ -91,6 +95,7 @@ export default function Finance() {
   };
 
   const fetchExpenses = async () => {
+    setLoadingExpenses(true);
     const { data } = await supabase
       .from('expenses')
       .select(`
@@ -99,6 +104,7 @@ export default function Finance() {
       `)
       .order('created_at', { ascending: false });
     setExpenses(data || []);
+    setLoadingExpenses(false);
   };
 
   const handleExpenseAction = async (id: string, status: 'approved' | 'rejected') => {
@@ -119,7 +125,7 @@ export default function Finance() {
   return (
     <Layout>
       <div className="p-8 space-y-8">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center animate-fly-in">
           <div>
             <h1 className="text-4xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
               Finance Dashboard
@@ -131,59 +137,86 @@ export default function Finance() {
           <AddTransactionDialog />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <KPICard
-            title="Total Revenue"
-            value={`GH₵${totalRevenue.toLocaleString()}`}
-            icon={DollarSign}
-            trend="+12.5%"
-          />
-          <KPICard
-            title="Total Expenses"
-            value={`GH₵${totalExpenses.toLocaleString()}`}
-            icon={TrendingDown}
-            trend="+8.2%"
-          />
-          <KPICard
-            title="Net Income"
-            value={`GH₵${(totalRevenue - totalExpenses).toLocaleString()}`}
-            icon={TrendingUp}
-            trend="+15.3%"
-          />
-          <KPICard
-            title="Pending Claims"
-            value={pendingExpenses.toString()}
-            icon={FileText}
-            trend="0"
-          />
-        </div>
+        {loading ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <SkeletonChart />
+              <SkeletonChart />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="animate-fly-in-delay-1">
+                <KPICard
+                  title="Total Revenue"
+                  value={`GH₵${totalRevenue.toLocaleString()}`}
+                  icon={DollarSign}
+                  trend="+12.5%"
+                />
+              </div>
+              <div className="animate-fly-in-delay-2">
+                <KPICard
+                  title="Total Expenses"
+                  value={`GH₵${totalExpenses.toLocaleString()}`}
+                  icon={TrendingDown}
+                  trend="+8.2%"
+                />
+              </div>
+              <div className="animate-fly-in-delay-3">
+                <KPICard
+                  title="Net Income"
+                  value={`GH₵${(totalRevenue - totalExpenses).toLocaleString()}`}
+                  icon={TrendingUp}
+                  trend="+15.3%"
+                />
+              </div>
+              <div className="animate-fly-in-delay-4">
+                <KPICard
+                  title="Pending Claims"
+                  value={pendingExpenses.toString()}
+                  icon={FileText}
+                  trend="0"
+                />
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="glass-card animate-fly-in">
+                <CardHeader>
+                  <CardTitle>Revenue Trends</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RevenueChart data={revenueChartData} />
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card animate-fly-in-delay-1">
+                <CardHeader>
+                  <CardTitle>Regional Performance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RegionChart data={regionChartData} onRegionClick={() => {}} selectedRegion={null} />
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+
+        {loadingExpenses ? (
+          <SkeletonTable rows={5} columns={7} />
+        ) : (
+          <Card className="glass-card animate-fly-in-delay-2">
             <CardHeader>
-              <CardTitle>Revenue Trends</CardTitle>
+              <CardTitle>Expense Claims</CardTitle>
             </CardHeader>
             <CardContent>
-              <RevenueChart data={revenueChartData} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Regional Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <RegionChart data={regionChartData} onRegionClick={() => {}} selectedRegion={null} />
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Expense Claims</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Employee</TableHead>
@@ -236,9 +269,10 @@ export default function Finance() {
             </Table>
           </CardContent>
         </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+          <Card className="glass-card animate-fly-in-delay-3">
             <CardHeader>
               <CardTitle>Top Sales People</CardTitle>
             </CardHeader>
@@ -281,7 +315,7 @@ export default function Finance() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card animate-fly-in-delay-4">
             <CardHeader>
               <CardTitle>Transaction History</CardTitle>
             </CardHeader>
