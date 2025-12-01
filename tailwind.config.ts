@@ -62,13 +62,19 @@ export default {
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",
         "gradient-card": "var(--gradient-card)",
+        "gradient-glass": "var(--gradient-glass)",
       },
       boxShadow: {
         card: "var(--shadow-card)",
         elevated: "var(--shadow-elevated)",
+        glow: "var(--shadow-glow)",
       },
       transitionTimingFunction: {
         smooth: "var(--transition-smooth)",
+        bounce: "var(--transition-bounce)",
+      },
+      backdropBlur: {
+        glass: "16px",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -92,10 +98,48 @@ export default {
             height: "0",
           },
         },
+        "fly-in": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(30px) scale(0.95)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0) scale(1)",
+          },
+        },
+        "slide-in-left": {
+          "0%": {
+            transform: "translateX(-100%)",
+            opacity: "0",
+          },
+          "100%": {
+            transform: "translateX(0)",
+            opacity: "1",
+          },
+        },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        "scale-in": {
+          "0%": {
+            transform: "scale(0.9)",
+            opacity: "0",
+          },
+          "100%": {
+            transform: "scale(1)",
+            opacity: "1",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fly-in": "fly-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "slide-in-left": "slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        "fade-in": "fade-in 0.3s ease-out",
+        "scale-in": "scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
       },
     },
   },

@@ -49,9 +49,12 @@ All colors MUST be HSL.
 
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 35%) 0%, hsl(188 95% 48%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 20% 99%) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.7) 0%, hsl(210 20% 99% / 0.5) 100%);
     --shadow-card: 0 1px 3px 0 hsl(220 25% 15% / 0.05), 0 1px 2px -1px hsl(220 25% 15% / 0.05);
     --shadow-elevated: 0 10px 30px -5px hsl(220 25% 15% / 0.1), 0 8px 16px -8px hsl(220 25% 15% / 0.1);
+    --shadow-glow: 0 0 30px hsl(217 91% 35% / 0.15), 0 0 60px hsl(188 95% 48% / 0.1);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   .dark {
@@ -94,8 +97,10 @@ All colors MUST be HSL.
 
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 45%) 0%, hsl(188 95% 52%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(220 25% 13%) 0%, hsl(220 25% 11%) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(220 25% 15% / 0.7) 0%, hsl(220 25% 12% / 0.5) 100%);
     --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
     --shadow-elevated: 0 10px 30px -5px hsl(0 0% 0% / 0.4), 0 8px 16px -8px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 30px hsl(217 91% 55% / 0.2), 0 0 60px hsl(188 95% 52% / 0.15);
   }
 }
 
@@ -106,5 +111,52 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .glass-effect {
+    @apply bg-gradient-glass backdrop-blur-xl border border-border/30;
+  }
+  
+  .glass-card {
+    @apply glass-effect shadow-elevated;
+  }
+  
+  .animate-fly-in {
+    animation: fly-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  
+  .animate-fly-in-delay-1 {
+    animation: fly-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  
+  .animate-fly-in-delay-2 {
+    animation: fly-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  
+  .animate-fly-in-delay-3 {
+    animation: fly-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  
+  .animate-fly-in-delay-4 {
+    animation: fly-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+}
+
+@keyframes fly-in {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
