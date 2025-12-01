@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Bell, Check, X } from "lucide-react";
+import { Bell, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -82,18 +82,6 @@ export function NotificationCenter() {
     setUnreadCount(0);
   };
 
-  const deleteNotification = async (id: string) => {
-    await supabase
-      .from('notifications')
-      .delete()
-      .eq('id', id);
-
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    setUnreadCount(prev => {
-      const notif = notifications.find(n => n.id === id);
-      return notif && !notif.read ? prev - 1 : prev;
-    });
-  };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -169,14 +157,6 @@ export function NotificationCenter() {
                               <Check className="h-3 w-3" />
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => deleteNotification(notification.id)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground">
