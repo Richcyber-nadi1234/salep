@@ -17,26 +17,32 @@ export const KPICard = ({ title, value, change, changeLabel, icon, trend }: KPIC
   const isNeutral = change === 0 || trend === '0';
   
   return (
-    <Card className="bg-gradient-card shadow-card hover:shadow-elevated transition-all duration-300 border-border">
+    <Card className="glass-card hover:shadow-glow transition-all duration-500 hover:scale-[1.02] border-border/30 group animate-fly-in">
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          {icon && <div className="text-primary">{React.createElement(icon, { className: "h-5 w-5" })}</div>}
+          {icon && (
+            <div className="text-primary transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+              {React.createElement(icon, { className: "h-5 w-5" })}
+            </div>
+          )}
         </div>
         <div className="space-y-2">
-          <p className="text-3xl font-bold text-foreground">{value}</p>
+          <p className="text-3xl font-bold text-foreground bg-gradient-primary bg-clip-text group-hover:text-transparent transition-all duration-300">
+            {value}
+          </p>
           {(change !== undefined || trend) && (
             <div className="flex items-center gap-2">
               <div
                 className={cn(
-                  "flex items-center gap-1 text-sm font-medium",
-                  isPositive && "text-success",
-                  !isPositive && !isNeutral && "text-destructive",
+                  "flex items-center gap-1 text-sm font-medium transition-all duration-300",
+                  isPositive && "text-success group-hover:scale-105",
+                  !isPositive && !isNeutral && "text-destructive group-hover:scale-105",
                   isNeutral && "text-muted-foreground"
                 )}
               >
-                {isPositive && <TrendingUp className="w-4 h-4" />}
-                {!isPositive && !isNeutral && <TrendingDown className="w-4 h-4" />}
+                {isPositive && <TrendingUp className="w-4 h-4 animate-pulse" />}
+                {!isPositive && !isNeutral && <TrendingDown className="w-4 h-4 animate-pulse" />}
                 {isNeutral && <Minus className="w-4 h-4" />}
                 <span>{trend || `${Math.abs(change || 0)}%`}</span>
               </div>
